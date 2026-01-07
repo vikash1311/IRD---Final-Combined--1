@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRD Admin - Content Management</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="admin-combined-styles.css">
+    <script src="blog-generator.js"></script>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-box">
+            <div class="login-title">
+                <span class="i-letter">
+                    I<span class="red-dot"></span>
+                </span>RD Admin
+            </div>
+            <div id="loginError" class="status-message status-error" style="display: none;"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="loginEmail" required placeholder="admin@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="loginPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary" id="loginBtn" style="width: 100%;">
+                    <span class="material-icons">lock_open</span>
+                    Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" style="display: none;">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="logo">
+                <span class="i-letter">
+                    I<span class="red-dot"></span>
+                </span>RD Admin - Content Management
+            </div>
+            <div class="user-info">
+                <span class="user-email" id="userEmail"></span>
+                <button class="logout-btn" onclick="logout()">
+                    <span class="material-icons">logout</span>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab('blogs')">
+                <span class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 5px;">article</span>
+                Blog Management
+            </button>
+            <button class="tab-btn" onclick="switchTab('archives')">
+                <span class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 5px;">newspaper</span>
+                Archives Management
+            </button>
+        </div>
+
+        <!-- ========== BLOGS TAB ========== -->
+        <div id="blogs-tab" class="tab-content active">
+            <div class="container">
+                <!-- Stats Dashboard -->
+                <div class="stats-dashboard">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Blogs</div>
+                        <div class="stat-value" id="totalBlogs">0</div>
+                        <div class="stat-label">Published Posts</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">This Year</div>
+                        <div class="stat-value" id="yearBlogs">0</div>
+                        <div class="stat-label">2025 Posts</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Last Updated</div>
+                        <div class="stat-value" id="lastUpdated">-</div>
+                        <div class="stat-label">Recently</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Storage Used</div>
+                        <div class="stat-value" id="storageUsed">0MB</div>
+                        <div class="stat-label">Images</div>
+                    </div>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="search-filter">
+                    <div class="search-box">
+                        <span class="material-icons search-icon">search</span>
+                        <input type="text" id="searchBlogs" class="search-input" placeholder="Search blogs by title, content, or slug...">
+                    </div>
+                    <div class="filter-group">
+                        <select id="filterYear" class="filter-select">
+                            <option value="">All Years</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+                        <select id="filterSort" class="filter-select">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="year-desc">Year (Desc)</option>
+                            <option value="year-asc">Year (Asc)</option>
+                        </select>
+                        <button id="clearFilters" class="action-btn secondary">
+                            <span class="material-icons">clear_all</span>
+                            Clear Filters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin Actions -->
+                <div class="admin-actions">
+                    <button class="action-btn primary" onclick="openAddModal()">
+                        <span class="material-icons">add</span>
+                        Add New Blog
+                    </button>
+                    <button class="action-btn success" onclick="exportBlogs()">
+                        <span class="material-icons">download</span>
+                        Export Blogs
+                    </button>
+                    <button class="action-btn info" onclick="document.getElementById('importFile').click()">
+                        <span class="material-icons">upload</span>
+                        Import Blogs
+                    </button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                    <button class="action-btn secondary" onclick="refreshBlogs()">
+                        <span class="material-icons">refresh</span>
+                        Refresh
+                    </button>
+                    <button class="action-btn info" onclick="generateAllBlogs()">
+                        <span class="material-icons">code</span>
+                        Generate All HTML
+                    </button>
+                    <button class="action-btn warning" onclick="cleanupOrphanedImages()">
+                        <span class="material-icons">cleaning_services</span>
+                        Cleanup Images
+                    </button>
+                </div>
+
+                <!-- Setup Warning -->
+                <div id="setupWarning" class="status-message status-warning" style="display: none;">
+                    <span class="material-icons">warning</span>
+                    <div>
+                        <strong>⚠️ Database Setup Required</strong><br>
+                        It looks like your database table isn't set up yet. Please run the SQL setup in your Supabase dashboard.
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading blog posts...</div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-icon">📝</div>
+                    <h3 style="margin-bottom: 10px; color: var(--black-30);">No blog posts yet</h3>
+                    <p style="color: var(--black-50); margin-bottom: 20px;">Start by creating your first blog post</p>
+                    <button class="action-btn primary" onclick="openAddModal()">
+                        <span class="material-icons">add</span>
+                        Create First Blog
+                    </button>
+                </div>
+
+                <!-- Blogs Grid -->
+                <div id="blogsList" class="blogs-grid"></div>
+            </div>
+        </div>
+
+        <!-- ========== ARCHIVES TAB ========== -->
+        <div id="archives-tab" class="tab-content">
+            <div class="container">
+                <!-- Stats Dashboard -->
+                <div class="stats-dashboard">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Articles</div>
+                        <div class="stat-value" id="totalArticles">0</div>
+                        <div class="stat-label">Published</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">This Year</div>
+                        <div class="stat-value" id="yearArticles">0</div>
+                        <div class="stat-label">2025 Articles</div>
+                    </div>
+                </div>
+
+                <!-- Admin Actions -->
+                <div class="admin-actions">
+                    <button class="action-btn primary" onclick="openArchiveModal()">
+                        <span class="material-icons">add</span>
+                        Add Article
+                    </button>
+                    <button class="action-btn secondary" onclick="refreshArchives()">
+                        <span class="material-icons">refresh</span>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Setup Warning -->
+                <div id="archivesSetupWarning" class="status-message status-warning" style="display: none;">
+                    <span class="material-icons">warning</span>
+                    <div>
+                        <strong>⚠️ Database Setup Required</strong><br>
+                        Press articles table not found. Please run the SQL setup in Supabase.
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="archivesLoading" class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading articles...</div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="archivesEmpty" class="empty-state" style="display: none;">
+                    <div class="empty-icon">📰</div>
+                    <h3 style="margin-bottom: 10px; color: var(--black-30);">No articles yet</h3>
+                    <p style="color: var(--black-50); margin-bottom: 20px;">Click "Add Article" to create your first press article</p>
+                    <button class="action-btn primary" onclick="openArchiveModal()">
+                        <span class="material-icons">add</span>
+                        Create First Article
+                    </button>
+                </div>
+
+                <!-- Archives List -->
+                <div id="archivesList" class="articles-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blog Modal -->
+    <div id="blogModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <span class="material-icons">article</span>
+                    <span id="modalTitleText">Add New Blog Post</span>
+                </h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="blogForm">
+                    <input type="hidden" id="blogId">
+                    
+                    <div class="form-grid">
+                        <!-- Year -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span class="required">*</span> Year
+                            </label>
+                            <input type="number" class="form-input" id="blogYear" min="2000" max="2100" required placeholder="e.g., 2025">
+                            <span class="form-help">Publication year of the blog</span>
+                        </div>
+
+                        <!-- Title -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span class="required">*</span> Title
+                            </label>
+                            <input type="text" class="form-input" id="blogTitle" required placeholder="e.g., We are shortlisted!">
+                            <span class="form-help">Main title of your blog post</span>
+                        </div>
+
+                        <!-- Slug -->
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <span class="required">*</span> Slug
+                            </label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="text" class="form-input" id="blogSlug" required placeholder="e.g., blog-1">
+                                <button type="button" class="btn-secondary" id="generateSlugBtn">
+                                    <span class="material-icons">auto_fix_high</span>
+                                    Generate
+                                </button>
+                            </div>
+                            <div class="slug-preview">
+                                URL: <span id="slugPreview">/blog-slug.html</span>
+                            </div>
+                            <span class="form-help">Used in the URL. Use lowercase letters, numbers, and hyphens only</span>
+                        </div>
+
+                        <!-- Featured Image -->
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <span class="required">*</span> Featured Image
+                            </label>
+                            <input type="hidden" id="blogImage" required>
+                            
+                            <!-- Image Upload Container -->
+                            <div class="image-upload-container" id="imageUploadContainer">
+                                <div style="margin-bottom: 15px;">
+                                    <span class="material-icons" style="font-size: 48px; color: var(--black-50);">cloud_upload</span>
+                                    <p style="color: var(--black-30); margin: 10px 0;">Drag & drop or click to upload</p>
+                                </div>
+                                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                                <button type="button" class="btn btn-secondary" onclick="document.getElementById('imageUpload').click()">
+                                    <span class="material-icons">upload</span>
+                                    Choose File
+                                </button>
+                                <p style="color: var(--black-50); font-size: 12px; margin-top: 10px;">
+                                    JPG, PNG, GIF, WebP up to 5MB
+                                </p>
+                            </div>
+                            
+                            <!-- Upload Progress -->
+                            <div id="uploadProgress" style="display: none; margin-top: 15px;">
+                                <div class="upload-progress">
+                                    <div class="progress-bar" id="progressBar"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                    <span style="color: var(--black-30); font-size: 12px;" id="progressText">Uploading...</span>
+                                    <span style="color: var(--black-50); font-size: 12px;" id="progressPercent">0%</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Image Preview -->
+                            <div id="imagePreviewContainer" class="image-preview-container" style="display: none;">
+                                <img id="imagePreview" class="image-preview">
+                                <div class="image-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('imageUpload').click()">
+                                        <span class="material-icons">change_circle</span>
+                                        Change Image
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearImage()">
+                                        <span class="material-icons">delete</span>
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Alternative URL Input -->
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--black-80);">
+                                <p style="color: var(--black-30); margin-bottom: 10px; font-size: 14px;">Or use external image URL:</p>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" class="form-input" id="imageUrlInput" placeholder="https://example.com/image.jpg" style="flex: 1;">
+                                    <button type="button" class="btn btn-secondary" id="useUrlBtn">
+                                        <span class="material-icons">link</span>
+                                        Use URL
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Excerpt -->
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <span class="required">*</span> Excerpt
+                            </label>
+                            <textarea class="form-textarea" id="blogExcerpt" required placeholder="Short description shown on the blog listing page..."></textarea>
+                            <span class="form-help">Brief summary of the blog post</span>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <span class="required">*</span> Full Content
+                            </label>
+                            <textarea class="form-textarea large" id="blogContent" required placeholder="Full blog post content with HTML formatting..."></textarea>
+                            <span class="form-help">Complete blog post. Use &lt;p&gt; tags for paragraphs and &lt;br&gt; for line breaks.</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-primary" id="submitBtn" form="blogForm">
+                    <span class="material-icons">save</span>
+                    Save Blog Post
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archive Modal -->
+    <div id="archiveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <span class="material-icons">newspaper</span>
+                    <span id="archiveModalTitle">Add Article</span>
+                </h2>
+                <button class="close-btn" onclick="closeArchiveModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="archiveForm">
+                    <input type="hidden" id="archiveId">
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required">*</span> Year
+                        </label>
+                        <input type="number" class="form-input" id="archiveYear" min="2000" max="2100" required placeholder="e.g., 2025">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="text" class="form-input" id="archiveDate" placeholder="e.g., December 15, 2019">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required">*</span> Title
+                        </label>
+                        <input type="text" class="form-input" id="archiveTitle" required placeholder="e.g., CID AWARDS MENA 2025">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Subtitle</label>
+                        <input type="text" class="form-input" id="archiveSubtitle" placeholder="e.g., The Shortlist">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required">*</span> Content
+                        </label>
+                        <textarea class="form-textarea large" id="archiveContent" required placeholder="Article description, awards, achievements, etc."></textarea>
+                        <small style="color: var(--black-50); font-size: 12px;">You can include links and formatting. They will be displayed as-is.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Links (one per line)</label>
+                        <textarea class="form-textarea" id="articleLinks" placeholder="https://example.com/article1
+            https://example.com/article2"></textarea>
+                    </div>
+
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeArchiveModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-primary" id="archiveSubmitBtn" form="archiveForm">
+                    <span class="material-icons">save</span>
+                    Save Article
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.min.js"></script>
+    <script src="admin-combined-logic.js"></script>
+</body>
+</html>  
